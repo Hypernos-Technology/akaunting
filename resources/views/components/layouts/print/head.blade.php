@@ -20,25 +20,20 @@
     <!-- Css -->
     <link rel="stylesheet" href="{{ asset('public/css/print.css') }}" type="text/css">
 
-    @if (isset($currency_style) && $currency_style || in_array(app()->getLocale(), ['zh-CN', 'ja-JP', 'zh-TW']))
-    <style type="text/css">
+    <style>
         @font-face {
-            font-family: 'Firefly Sung';
-            font-weight: 'normal';
+            font-family: 'firefly';
             src: url('{{ asset("/public/css/fonts/firefly_sung_normal.ttf") }}') format("truetype");
         }
 
         * {
-            font-family: 'Firefly Sung', sans-serif !important;
-        }
-    </style>
-    @else
-    <style type="text/css">
-        * {
             font-family: DejaVu Sans, sans-serif !important;
         }
+
+        span[lang="zh"] {
+            font-family: 'firefly', sans-serif !important;
+        }
     </style>
-    @endif
 
     @stack('css')
 
