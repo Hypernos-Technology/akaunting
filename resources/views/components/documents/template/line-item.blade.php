@@ -2,7 +2,6 @@
 include_once resource_path('/views/components/documents/template/helpers.php');
 ?>
 
-
 <tr>
     @stack('name_td_start')
         @if (! $hideItems || (! $hideName && ! $hideDescription))
@@ -14,7 +13,7 @@ include_once resource_path('/views/components/documents/template/helpers.php');
                 @if (! $hideDescription)
                     @if (! empty($item->description))
                         <div class="small-text break-words">
-                            {!! \Illuminate\Support\Str::limit(nl2br(wrapChineseTextInHTML($item->description)), 500) !!}
+                            {!! convertEmoji(\Illuminate\Support\Str::limit(nl2br(wrapChineseTextInHTML($item->description)), 500)) !!}
                         </div>
                     @endif
                 @endif
