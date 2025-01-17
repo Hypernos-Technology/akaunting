@@ -322,7 +322,7 @@ class Transaction extends Model
             $suffix = $src->isRecurringTransaction() ? '-recurring' : '';
         }
 
-        $this->number       = $this->getNextTransactionNumber($suffix);
+        $this->number       = $this->getNextTransactionNumber($this->type, $suffix);
         $this->document_id  = null;
         $this->split_id     = null;
         unset($this->reconciled);
@@ -571,7 +571,10 @@ class Transaction extends Model
         } catch (\Exception $e) {}
 
         try {
-            if (empty($this->document_id) && $this->isNotTransferTransaction()) {
+            if (empty($this->document_id) 
+                && $this->isNotTransferTransaction()
+                && $this->isNotSplitTransaction()
+            ) {
                 $actions[] = [
                     'title' => trans('general.duplicate'),
                     'icon' => 'file_copy',

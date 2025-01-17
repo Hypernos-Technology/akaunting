@@ -3,9 +3,10 @@
 namespace App\Providers;
 
 use App\Models\Setting\Currency;
+use App\Utilities\Modules;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider as Provider;
 use Illuminate\Support\Str;
-use Validator;
 
 class Validation extends Provider
 {
@@ -16,9 +17,8 @@ class Validation extends Provider
      */
     public function boot()
     {
-        $currency_code = null;
-
-        Validator::extend('currency', function ($attribute, $value, $parameters, $validator) use(&$currency_code) {
+        // Check currency code has 3 characters and is valid
+        Validator::extend('currency', function ($attribute, $value, $parameters, $validator) {
             $status = false;
 
             if (!is_string($value)) {
@@ -38,13 +38,35 @@ class Validation extends Provider
             $currency_code = $value;
 
             return $status;
-        },
-            trans('validation.custom.invalid_currency', ['attribute' => $currency_code])
-        );
+        });
 
-        $amount = null;
+        // Custom message for currency validation
+        Validator::replacer('currency', function($message, $attribute, $rule, $parameters) {
+            return trans('validation.custom.invalid_currency', ['attribute' => $attribute]);
+        });
 
-        Validator::extend('amount', function ($attribute, $value, $parameters, $validator) use (&$amount) {
+        // Check currency code is valid
+        Validator::extend('currency_code', function ($attribute, $value, $parameters, $validator) {
+            $status = false;
+
+            $currency_code = $value;
+
+            $currencies = config('money.currencies');
+
+            if (array_key_exists($value, $currencies)) {
+                $status = true;
+            }
+
+            return $status;
+        });
+
+        // Custom message for currency code validation
+        Validator::replacer('currency_code', function($message, $attribute, $rule, $parameters) {
+            return trans('validation.custom.invalid_currency', ['attribute' => $attribute]);
+        });
+
+        // Check amount is valid
+        Validator::extend('amount', function ($attribute, $value, $parameters, $validator) {
             $status = false;
 
             if ($value > 0 || in_array($value, $parameters)) {
@@ -55,13 +77,15 @@ class Validation extends Provider
                 $status = false;
             }
 
-            $amount = $value;
-
             return $status;
-        },
-            trans('validation.custom.invalid_amount', ['attribute' => $amount])
-        );
+        });
 
+        // Custom message for amount validation
+        Validator::replacer('amount', function($message, $attribute, $rule, $parameters) {
+            return trans('validation.custom.invalid_amount', ['attribute' => $attribute]);
+        });
+
+        // Check extension is valid
         Validator::extend('extension', function ($attribute, $value, $parameters, $validator) {
             $extension = $value->getClientOriginalExtension();
 
@@ -70,6 +94,7 @@ class Validation extends Provider
             trans('validation.custom.invalid_extension')
         );
 
+        // Check colour is valid
         Validator::extend('colour', function ($attribute, $value, $parameters, $validator) {
             $status = false;
 
@@ -103,6 +128,21 @@ class Validation extends Provider
             return $status;
         },
             trans('validation.custom.invalid_colour')
+        );
+
+        // Check payment method is valid
+        Validator::extend('payment_method', function ($attribute, $value, $parameters, $validator) {
+            $status = false;
+
+            $methods = Modules::getPaymentMethods('all');
+
+            if (array_key_exists($value, $methods)) {
+                $status = true;
+            }
+
+            return $status;
+        },
+            trans('validation.custom.invalid_payment_method')
         );
     }
 

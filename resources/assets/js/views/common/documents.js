@@ -147,7 +147,9 @@ const app = new Vue({
             }
 
             this.form.pay_in_full = true;
+
             let form_amount = (error_amount) ? error_amount : amount;
+
             this.form.amount = parseFloat(form_amount).toFixed(precision);
             this.form.default_amount = parseFloat(this.form.document_default_amount).toFixed(precision);
         },
@@ -189,8 +191,6 @@ const app = new Vue({
         },
 
         onChangeRatePayment(event) {
-            debugger;
-
             this.$forceUpdate();
 
             this.form.currency_rate = event.target.value;
@@ -930,7 +930,7 @@ const app = new Vue({
                         name: item_tax.name,
                         price: (item_tax.amount).toFixed(this.currency.precision ?? 2),
                     });
-                });
+                }, this);
 
                 this.items.push({
                     item_id: item.item_id,

@@ -75,6 +75,10 @@ return [
     'your_notifications'    => 'Uw mededeling|Uw mededelingen',
     'employees'             => 'Werknemer|Werknemers',
     'contact_persons'       => 'Contactpersoon|Contactpersonen',
+    'bank_feeds'            => 'Bank Feed|Bank Feeds',
+    'receipts'              => 'Ontvangstbewijs|Ontvangstbewijzen',
+    'ofx'                   => 'OFX',
+    'mt940'                 => 'MT940',
 
     'welcome'               => 'Welkom',
     'banking'               => 'Banken',
@@ -236,6 +240,7 @@ return [
     'preview_mode'          => 'Voorbeeld Modus',
     'go_back'               => 'Terug naar :type',
     'validation_error'      => 'Validatiefout',
+    'validation_warning'    => 'Validatie waarschuwing',
     'dismiss'               => 'Verwerp',
     'size'                  => 'Grootte',
     'media'                 => 'Media',
@@ -313,6 +318,11 @@ return [
         'previous_quarter'  => 'Vorige Kwartaal',
         'previous_year'     => 'Vorig Jaar',
         'custom'            => 'Aangepast',
+    ],
+
+    'pin_text' => [
+        'pin_tab' => 'Standaard tabblad vastzetten',
+        'unpin_tab' => 'Standaard tabblad losmaken',
     ],
 
     'empty' => [

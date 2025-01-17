@@ -39,7 +39,7 @@ class Transaction extends FormRequest
 
         $rules = [
             'type' => 'required|string',
-            'number' => 'required|string|unique:transactions,NULL,' . $id . ',id,company_id,' . $company_id . ',deleted_at,NULL',
+            'number' => 'required|string|unique:transactions,NULL,' . ($id ?? 'null') . ',id,company_id,' . $company_id . ',deleted_at,NULL',
             'account_id' => 'required|integer',
             'paid_at' => 'required|date_format:Y-m-d H:i:s',
             'amount' => 'required|amount:0',
@@ -48,7 +48,7 @@ class Transaction extends FormRequest
             'document_id' => 'nullable|integer',
             'contact_id' => 'nullable|integer',
             'category_id' => 'required|integer',
-            'payment_method' => 'required|string',
+            'payment_method' => 'required|string|payment_method',
             'attachment.*' => $attachment,
             'recurring_count' => 'gte:0',
             'recurring_interval' => 'exclude_unless:recurring_frequency,custom|gt:0',

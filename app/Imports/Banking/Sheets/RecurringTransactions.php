@@ -6,13 +6,26 @@ use App\Abstracts\Import;
 use App\Models\Document\Document;
 use App\Models\Banking\Transaction as Model;
 use App\Http\Requests\Banking\Transaction as Request;
+use App\Traits\Transactions as TraitsTransactions;
 
 class RecurringTransactions extends Import
 {
+    use TraitsTransactions;
+
     public $request_class = Request::class;
+
+    public $model = Model::class;
+
+    public $columns = [
+        'number',
+    ];
 
     public function model(array $row)
     {
+        if (self::hasRow($row)) {
+            return;
+        }
+
         return new Model($row);
     }
 

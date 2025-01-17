@@ -75,6 +75,10 @@ return [
     'your_notifications'    => 'Your notification|Your notifications',
     'employees'             => 'Employee|Employees',
     'contact_persons'       => 'Contact Person|Contact Persons',
+    'bank_feeds'            => 'Bank Feed|Bank Feeds',
+    'receipts'              => 'Receipt|Receipts',
+    'ofx'                   => 'OFX',
+    'mt940'                 => 'MT940',
 
     'welcome'               => 'Welcome',
     'banking'               => 'Banking',
@@ -236,6 +240,7 @@ return [
     'preview_mode'          => 'Preview Mode',
     'go_back'               => 'Go back to :type',
     'validation_error'      => 'Validation error',
+    'validation_warning'    => 'Validation warning',
     'dismiss'               => 'Dismiss',
     'size'                  => 'Size',
     'media'                 => 'Media',
@@ -313,6 +318,11 @@ return [
         'previous_quarter'  => 'Previous Quarter',
         'previous_year'     => 'Previous Year',
         'custom'            => 'Custom',
+    ],
+
+    'pin_text' => [
+        'pin_tab' => 'Pin default tab',
+        'unpin_tab' => 'Unpin default tab',
     ],
 
     'empty' => [

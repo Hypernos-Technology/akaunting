@@ -176,17 +176,28 @@ export default {
             },
             description: "Default currency"
         },
+        searchUrl: {
+            type: String,
+            default: url + '/common/items',
+            description: "Search URL"
+        },
         searchCharLimit: {
             type: Number,
             default: 3,
             description: "Character limit for item search input"
-        }
+        },
+        searchListKey: {
+            type: String|Array|Object,
+            default: 'value',
+            description: "Key for search in item list"
+        },
     },
 
     data() {
         return {
             item_list: [],
             selected_items: [],
+            search_list_key: this.searchListKey,
             changeBackground: true,
             search: '', // search column model
             show: {
@@ -241,37 +252,21 @@ export default {
             this.search.length === 0 ? this.isItemMatched = false : {}
 
             // Option set sort_option data
-            if (!Array.isArray(items)) {
+            if (! Array.isArray(items)) {
                 let index = 0;
 
                 for (const [key, value] of Object.entries(items)) {
-                    this.item_list.push({
-                        index: index,
-                        key: key,
-                        value: value,
-                        type: 'item',
-                        id: key,
-                        name: value,
-                        description: '',
-                        price: 0,
-                        tax_ids: [], 
-                    });
+                    let list_item = this.getObjectItem(key, value, index);
+
+                    this.item_list.push(list_item);
 
                     index++;
                 }
             } else {
                 items.forEach(function (item, index) {
-                    this.item_list.push({
-                        index: index,
-                        key: item.id,
-                        value: (item.title) ? item.title : (item.display_name) ? item.display_name : item.name,
-                        type: this.type,
-                        id: item.id,
-                        name: (item.title) ? item.title : (item.display_name) ? item.display_name : item.name,
-                        description: (item.description) ? item.description : '',
-                        price: (item.price) ? item.price : (this.price == 'purchase_price') ? item.purchase_price : item.sale_price,
-                        tax_ids: (item.tax_ids) ? item.tax_ids : [],
-                    });
+                    let list_item = this.getArrayItem(item, index);
+
+                    this.item_list.push(list_item);
                 }, this);
             }
         },
@@ -288,9 +283,11 @@ export default {
             this.search = event.target.value;
 
             this.isItemMatched = false;
+
             //to optimize performance we kept the condition that checks for if search exists or not
-            if (!this.search) {
+            if (! this.search) {
                 this.isItemMatched = false; //to remove the style from matched item on input is cleared (option)
+
                 return;
             }
 
@@ -298,6 +295,7 @@ export default {
             if (this.search.length < this.searchCharLimit) {
                 this.setItemList(this.items); //once the user deletes the search input, we show the overall item list
                 this.sortItems(); // we order it as wanted
+
                 this.$emit('input', this.search); // keep the input binded to v-model
 
                 return;
@@ -317,30 +315,28 @@ export default {
         },
 
         async fetchMatchedItems() {
-            await window.axios.get(url + '/common/items?search="' + this.search + '" not ' + this.price + ':NULL enabled:1 limit:10')
+            let search_limit_value = this.getSearchLimitValue();
+
+            await window.axios.get(this.searchUrl + '?search="' + this.search + '"' + search_limit_value + ' not ' + this.price + ':NULL enabled:1 limit:10')
                 .then(response => {
                     this.item_list = [];
                     let items = response.data.data;
 
+                    if (response.data.search_list_key) {
+                        this.search_list_key = response.data.search_list_key;
+                    }
+
                     items.forEach(function (item, index) {
-                        this.item_list.push({
-                            index: index,
-                            key: item.id,
-                            value: (item.title) ? item.title : (item.display_name) ? item.display_name : item.name,
-                            type: this.type,
-                            id: item.id,
-                            name: (item.title) ? item.title : (item.display_name) ? item.display_name : item.name,
-                            description: (item.description) ? item.description : '',
-                            price: (item.price) ? item.price : (this.price == 'purchase_price') ? item.purchase_price : item.sale_price,
-                            tax_ids: (item.tax_ids) ? item.tax_ids : [],
-                        });
+                        let list_item = this.getArrayItem(item, index);
+
+                        this.item_list.push(list_item);
                     }, this);
                 })
                 .catch(error => {});
         },
 
         onItemSelected(clickSelectedItem) {
-            let item; 
+            let item;
             const firstMatchedItem = this.item_list[0];
             const isClickSelectedItem = clickSelectedItem ? true : false;
             isClickSelectedItem ? item = clickSelectedItem  : item = firstMatchedItem;
@@ -377,7 +373,7 @@ export default {
                 price: 0,
                 tax_ids: [],
             };
-            
+
             this.newItems.push(item);
 
             this.addItem(item, 'newItem');
@@ -427,17 +423,9 @@ export default {
                 if (response.data.success) {
                     let item = response.data.data;
 
-                    this.item_list.push({
-                        index: index,
-                        key: item.id,
-                        value: (item.title) ? item.title : (item.display_name) ? item.display_name : item.name,
-                        type: this.type,
-                        id: item.id,
-                        name: (item.title) ? item.title : (item.display_name) ? item.display_name : item.name,
-                        description: (item.description) ? item.description : '',
-                        price: (item.price) ? item.price : (this.price == 'purchase_price') ? item.purchase_price : item.sale_price,
-                        tax_ids: (item.tax_ids) ? item.tax_ids : [],
-                    });
+                    let list_item = this.getArrayItem(item, index);
+
+                    this.item_list.push(list_item);
 
                     this.add_new.show = false;
 
@@ -499,11 +487,129 @@ export default {
                 return 0;
             });
 
-            const sortedItemList = this.item_list.filter(item => 
-                item.value.toLowerCase().includes(this.search.toLowerCase())
-            );
+            const sortedItemList = this.item_list.filter((item, index, items) => {
+                if (typeof this.search_list_key === 'string') {
+                    return item[this.search_list_key].toLowerCase().includes(this.search.toLowerCase());
+                }
+
+                if (Array.isArray(this.search_list_key)) {
+                    return this.search_list_key.some(key => item[key].toLowerCase().includes(this.search.toLowerCase()));
+                }
+
+                if (typeof this.search_list_key === 'object') {
+                    return Object.keys(this.search_list_key).some(key => item[key].toLowerCase().includes(this.search.toLowerCase()));
+                }
+
+                return false;
+            }, this);
 
             return sortedItemList;
+        },
+
+        getSearchLimitValue() {
+            let value = '';
+
+            if (typeof this.search_list_key === 'string' && this.search_list_key !== 'value') {
+                value += ' or ' + this.search_list_key + ' = "' + this.search + '"';
+            } else if (Array.isArray(this.search_list_key)) {
+                this.search_list_key.forEach(key => {
+                    if (key !== 'value') {
+                        value += ' or ' + key + ' = "' + this.search + '"';
+                    }
+                });
+            } else if (typeof this.search_list_key === 'object') {
+                Object.keys(this.search_list_key).forEach(key => {
+                    if (key !== 'value') {
+                        value += ' or ' + key + ' = "' + this.search + '"';
+                    }
+                });
+            }
+
+            return value;
+        },
+
+        getObjectItem(key, value, index) {
+            let item = {
+                index: index,
+                key: key,
+                value: value,
+                type: 'item',
+                id: key,
+                name: value,
+                description: '',
+                price: 0,
+                tax_ids: [],
+            };
+
+            if (typeof this.search_list_key === 'string' && this.search_list_key !== 'value') {
+                item[this.search_list_key] = value;
+            }
+
+            if (Array.isArray(this.search_list_key)) {
+                this.search_list_key.forEach(key => {
+                    if (key !== 'value') {
+                        item[key] = value;
+                    }
+                });
+            } else if (typeof this.search_list_key === 'object') {
+                Object.keys(this.search_list_key).forEach(key => {
+                    if (key !== 'value') {
+                        item[key] = value;
+                    }
+                });
+            }
+
+            return item;
+        },
+
+        getArrayItem(item, index) {
+            let list_item = {
+                index: index,
+                key: item.id,
+                value: (item.title) ? item.title : (item.display_name) ? item.display_name : item.name,
+                type: this.type,
+                id: item.id,
+                name: (item.title) ? item.title : (item.display_name) ? item.display_name : item.name,
+                description: (item.description) ? item.description : '',
+                price: (item.price) ? item.price : (this.price == 'purchase_price') ? item.purchase_price : item.sale_price,
+                tax_ids: (item.tax_ids) ? item.tax_ids : [],
+            };
+
+            if (typeof this.search_list_key === 'string' && this.search_list_key !== 'value') {
+                list_item[this.search_list_key] = (item[this.search_list_key]) ? item[this.search_list_key] : '';
+            }
+
+            if (Array.isArray(this.search_list_key)) {
+                this.search_list_key.forEach(key => {
+                    if (key !== 'value') {
+                        list_item[key] = item[key]
+                        ? item[key]
+                        : (key.indexOf('.') > -1
+                            ? (item[key.split('.')[0]]
+                                ? (item[key.split('.')[0]][key.split('.')[1]]
+                                    ? item[key.split('.')[0]][key.split('.')[1]]
+                                    : '')
+                                : '')
+                            : '');
+                    }
+                }, this);
+            } else if (typeof this.search_list_key === 'object') {
+                Object.keys(this.search_list_key).forEach(key => {
+                    if (key !== 'value') {
+                        list_item[key] = item[key]
+                        ? item[key]
+                        : (key.indexOf('.') > -1
+                            ? (item[key.split('.')[0]]
+                                ? (item[key.split('.')[0]][key.split('.')[1]]
+                                    ? item[key.split('.')[0]][key.split('.')[1]]
+                                    : '')
+                                : '')
+                            : '');
+                    }
+                }, this);
+            }
+
+            return list_item;
         },
     },
 
@@ -518,7 +624,7 @@ export default {
 
     watch: {
         dynamicCurrency: function (currency) {
-            if (!currency) {
+            if (! currency) {
                 return;
             }
 
@@ -526,7 +632,7 @@ export default {
                 decimal: currency.decimal_mark,
                 thousands: currency.thousands_separator,
                 prefix: (currency.symbol_first) ? currency.symbol : '',
-                suffix: (!currency.symbol_first) ? currency.symbol : '',
+                suffix: (! currency.symbol_first) ? currency.symbol : '',
                 precision: parseInt(currency.precision),
                 masked: this.masked
             };
@@ -546,6 +652,6 @@ export default {
 
 <style scoped>
     .highlightItem:first-child {
-        background-color: #F5F7FA;    
+        background-color: #F5F7FA;
     }
 </style>

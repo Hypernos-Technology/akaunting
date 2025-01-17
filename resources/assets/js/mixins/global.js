@@ -198,13 +198,13 @@ export default {
                 try {
                     item.querySelectorAll('[data-tabs-slide]').forEach((slide, index, arr) => {
                         loop += slide.clientWidth;
-    
+
                         slide.classList.add('swiper-slide');
-        
+
                         if (slide.getAttribute('data-tabs') == hash_split) {
                             initial_slide = index;
                         }
-    
+
                         if (loop > item.clientWidth) {
                             slides_view = index;
                             throw BreakException;
@@ -213,15 +213,15 @@ export default {
                 } catch (e) {
                     if (e !== BreakException) throw e;
                 }
-                
+
                 item.querySelector('[data-tabs-swiper]').classList.add('swiper', 'swiper-links');
                 item.querySelector('[data-tabs-swiper-wrapper]').classList.add('swiper-wrapper');
-    
+
                 let html = `
                     <div class="swiper-tabs-container">
                         ${item.querySelector('[data-tabs-swiper]').innerHTML}
                     </div>
-    
+
                     <div class="swiper-button-next bg-body text-white flex items-center justify-center right-0">
                         <span class="material-icons text-purple text-4xl">chevron_right</span>
                     </div>
@@ -229,11 +229,11 @@ export default {
                         <span class="material-icons text-purple text-4xl">chevron_left</span>
                     </div>
                     `; 
-    
+
                 item.querySelector('[data-tabs-swiper]').innerHTML = html;
                 slides_view = Number(item.getAttribute('data-swiper')) != 0 ? Number(item.getAttribute('data-swiper'))  : slides_view;
                 item.setAttribute('data-swiper', slides_view);
-                                
+
                 new Swiper(item.querySelector('.swiper-tabs-container'), {
                     loop: true,
                     slidesPerView: slides_view,
@@ -251,7 +251,7 @@ export default {
                 item.removeAttribute('data-swiper');
                 item.querySelector('[data-tabs-swiper]').removeAttribute('data-tabs-swiper');
                 item.querySelector('[data-tabs-swiper-wrapper]').removeAttribute('data-tabs-swiper-wrapper');
-    
+
                 item.querySelectorAll('[data-tabs-slide]').forEach((slide) => {
                     slide.removeAttribute('data-tabs-slide');
                 });
@@ -1001,7 +1001,7 @@ export default {
 
                             onSubmitViaSendEmail(event) {
                                 event['sendtransaction'] = true;
-                    
+
                                 this.onSubmit(event);
                             },
 
@@ -1083,7 +1083,7 @@ export default {
                             // Parent vue instance methods merge with child vue instance methods
                             if (this.$root.$options.methods) {
                                 let parent_methods = this.$root.$options.methods;
-    
+
                                 for (let method_key in parent_methods) {
                                     if (this.$options.methods[method_key] === undefined) {
                                         this[method_key] = parent_methods[method_key];
@@ -1094,7 +1094,7 @@ export default {
                             // Parent vue instance data merge with child vue instance data
                             if (this.$root._data) {
                                 let parent_data = this.$root._data;
-    
+
                                 for (let data_key in parent_data) {
                                     if (this[data_key] === undefined) {
                                         this[data_key] = parent_data[data_key];
@@ -1263,7 +1263,7 @@ export default {
                             // Parent vue instance methods merge with child vue instance methods
                             if (this.$root.$options.methods) {
                                 let parent_methods = this.$root.$options.methods;
-    
+
                                 for (let method_key in parent_methods) {
                                     if (this.$options.methods[method_key] === undefined) {
                                         this[method_key] = parent_methods[method_key];
@@ -1335,7 +1335,7 @@ export default {
                             // Parent vue instance methods merge with child vue instance methods
                             if (this.$root.$options.methods) {
                                 let parent_methods = this.$root.$options.methods;
-    
+
                                 for (let method_key in parent_methods) {
                                     if (this.$options.methods[method_key] === undefined) {
                                         this[method_key] = parent_methods[method_key];
@@ -1496,7 +1496,7 @@ export default {
                                 // Parent vue instance methods merge with child vue instance methods
                                 if (this.$root.$options.methods) {
                                     let parent_methods = this.$root.$options.methods;
-        
+
                                     for (let method_key in parent_methods) {
                                         if (this.$options.methods[method_key] === undefined) {
                                             this[method_key] = parent_methods[method_key];
@@ -1583,7 +1583,7 @@ export default {
                             return;
                         }
                     }, this);
-                }   
+                }
 
                 this.$notify({
                     verticalAlign: 'bottom',

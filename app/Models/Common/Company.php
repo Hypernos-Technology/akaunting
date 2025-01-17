@@ -443,6 +443,22 @@ class Company extends Eloquent implements Ownable
     }
 
     /**
+     * Sort by company phone
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param $direction
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function phoneSortable($query, $direction)
+    {
+        return $query->join('settings', 'companies.id', '=', 'settings.company_id')
+            ->where('key', 'company.phone')
+            ->orderBy('value', $direction)
+            ->select('companies.*');
+    }
+
+    /**
      * Sort by company tax number
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
@@ -528,27 +544,13 @@ class Company extends Eloquent implements Ownable
 
     public function getLocationAttribute()
     {
-        $location = [];
-
-        if (setting('company.city')) {
-            $location[] = setting('company.city');
-        }
-
-        if (setting('company.zip_code')) {
-            $location[] = setting('company.zip_code');
-        }
-
-        if (setting('company.state')) {
-            $location[] = setting('company.state');
-        }
-
         $country = setting('company.country');
 
         if ($country && array_key_exists($country, trans('countries'))) {
-            $location[] = trans('countries.' . $country);
+            $trans_country = trans('countries.' . $country);
         }
 
-        return implode(', ', $location);
+        return $this->getFormattedAddress(setting('company.city'), $trans_country ?? null, setting('company.state'), setting('company.zip_code'));
     }
 
     /**

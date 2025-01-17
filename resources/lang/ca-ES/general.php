@@ -236,6 +236,7 @@ return [
     'preview_mode'          => 'Mode de previsualització',
     'go_back'               => 'Torna a :type',
     'validation_error'      => 'Error de validació',
+    'validation_warning'    => 'Avís de validació',
     'dismiss'               => 'Ignora',
     'size'                  => 'Mida',
     'media'                 => 'Multimèdia',
@@ -313,6 +314,11 @@ return [
         'previous_quarter'  => 'Trimestre anterior',
         'previous_year'     => 'Any anterior',
         'custom'            => 'Personalitzat',
+    ],
+
+    'pin_text' => [
+        'pin_tab' => 'Marca la pestanya per defecte',
+        'unpin_tab' => 'Desmarca la pestanya per defecte',
     ],
 
     'empty' => [

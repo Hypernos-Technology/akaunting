@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use App\Events\Common\ImportViewCreating;
+use App\Events\Common\ImportViewCreated;
 use App\Http\Requests\Banking\Account as AccountRequest;
 use App\Http\Requests\Common\Contact as ContactRequest;
 use App\Http\Requests\Common\Item as ItemRequest;
@@ -24,11 +26,41 @@ use App\Models\Setting\Currency;
 use App\Models\Setting\Tax;
 use App\Traits\Jobs;
 use App\Traits\Sources;
+use App\Traits\Translations;
+use App\Utilities\Modules;
 use Illuminate\Support\Facades\Validator;
+use Akaunting\Module\Module;
 
 trait Import
 {
-    use Jobs, Sources;
+    use Jobs, Sources, Translations;
+
+    public function getImportView($group, $type, $route = null)
+    {
+        // Get the view path
+        $view = $this->getImportViewPath($group, $type);
+
+        // Get import blade variables
+        $path = $this->getImportPath($group, $type);
+        $title_type = $this->getImportTitleType($group, $type);
+        $sample_file = $this->getImportSampleFile($group, $type);
+        $form_params = $this->getImportFormParams($group, $type);
+        $document_link = $this->getImportDocumentLink($group, $type);
+
+        // Create the import view
+        $import = new \stdClass();
+        $import->view = $view;
+        $import->data = compact('group', 'type', 'route', 'path', 'title_type', 'sample_file', 'form_params', 'document_link');
+
+        event(new ImportViewCreating($import));
+
+        event(new ImportViewCreated($import));
+
+        return [
+            $import->view, 
+            $import->data
+        ];
+    }
 
     public function getAccountId($row)
     {
@@ -92,17 +124,21 @@ trait Import
             return $currency->code;
         }
 
-        $data = [
-            'company_id'    => company_id(),
-            'code'          => $row['currency_code'],
-            'name'          => isset($row['currency_name']) ? $row['currency_name'] : currency($row['currency_code'])->getName(),
-            'rate'          => isset($row['currency_rate']) ? $row['currency_rate'] : 1,
-            'symbol'        => isset($row['currency_symbol']) ? $row['currency_symbol'] : currency($row['currency_code'])->getSymbol(),
-            'precision'     => isset($row['currency_precision']) ? $row['currency_precision'] : currency($row['currency_code'])->getPrecision(),
-            'decimal_mark'  => isset($row['currency_decimal_mark']) ? $row['currency_decimal_mark'] : currency($row['currency_code'])->getDecimalMark(),
-            'created_from'  => !empty($row['created_from']) ? $row['created_from'] : $this->getSourcePrefix() . 'import',
-            'created_by'    => !empty($row['created_by']) ? $row['created_by'] : user()?->id,
-        ];
+        try {
+            $data = [
+                'company_id'    => company_id(),
+                'code'          => $row['currency_code'],
+                'name'          => isset($row['currency_name']) ? $row['currency_name'] : currency($row['currency_code'])->getName(),
+                'rate'          => isset($row['currency_rate']) ? $row['currency_rate'] : 1,
+                'symbol'        => isset($row['currency_symbol']) ? $row['currency_symbol'] : currency($row['currency_code'])->getSymbol(),
+                'precision'     => isset($row['currency_precision']) ? $row['currency_precision'] : currency($row['currency_code'])->getPrecision(),
+                'decimal_mark'  => isset($row['currency_decimal_mark']) ? $row['currency_decimal_mark'] : currency($row['currency_code'])->getDecimalMark(),
+                'created_from'  => !empty($row['created_from']) ? $row['created_from'] : $this->getSourcePrefix() . 'import',
+                'created_by'    => !empty($row['created_by']) ? $row['created_by'] : user()?->id,
+            ];
+        } catch (\OutOfBoundsException $e) {
+            return default_currency();
+        }
 
         Validator::validate($data, (new CurrencyRequest)->rules());
 
@@ -174,6 +210,32 @@ trait Import
         }
 
         return is_null($id) ? $id : (int) $id;
+    }
+
+    public function getPaymentMethod($row)
+    {
+        Modules::clearPaymentMethodsCache();
+
+        $methods = Modules::getPaymentMethods('all');
+
+        $payment_method = isset($row['payment_method']) ? $row['payment_method'] : null;
+
+        if (array_key_exists($payment_method, $methods)) {
+            return $payment_method;
+        }
+
+        if (module_is_enabled('offline-payments')) {
+            $offline_payment = $this->dispatch(new \Modules\OfflinePayments\Jobs\CreatePaymentMethod([
+                'name'          => $payment_method,
+                'customer'      => 1,
+                'order'         => count($methods) + 1,
+                'description'   => '',
+            ]));
+
+            $payment_method = $offline_payment['code'];
+        }
+
+        return $payment_method;
     }
 
     public function getItemId($row, $type = null)
@@ -414,5 +476,109 @@ trait Import
         $tax = $this->dispatch(new CreateTax($data));
 
         return $tax->id;
+    }
+
+    protected function getImportPath($group, $type)
+    {
+        $path = config('import.' . $group . '.' . $type . '.path');
+
+        if (! empty($path)) {
+            return str_replace('company_id', company_id(), $path);
+        }
+
+        return company_id() . '/' . $group . '/' . $type;
+    }
+
+    protected function getImportTitleType($group, $type)
+    {
+        $title_type = config('import.' . $group . '.' . $type . '.title_type');
+
+        if (! empty($title_type)) {
+            return $this->findTranslation($title_type);
+        }
+
+        $module = module($group);
+
+        $title_type = trans_choice('general.' . str_replace('-', '_', $type), 2);
+
+        if ($module instanceof Module) {
+            $title_type = trans_choice($group . '::general.' . str_replace('-', '_', $type), 2);
+        }
+
+        return $title_type;
+    }
+
+    protected function getImportSampleFile($group, $type)
+    {
+        $sample_file = config('import.' . $group . '.' . $type . '.sample_file');
+
+        if (! empty($sample_file)) {
+            return url($sample_file);
+        }
+
+        $module = module($group);
+
+        $sample_file = url('public/files/import/' . $type . '.xlsx');
+
+        if ($module instanceof Module) {
+            $sample_file = url('modules/' . $module->getStudlyName() . '/Resources/assets/' . $type . '.xlsx');
+        }
+
+        return $sample_file;
+    }
+
+    protected function getImportFormParams($group, $type, $path = null, $route = null)
+    {
+        $form_params = config('import.' . $group . '.' . $type . '.form_params');
+
+        if (! empty($form_params)) {
+            return $form_params;
+        }
+
+        $form_params = [
+            'id' => 'import',
+            '@submit.prevent' => 'onSubmit',
+            '@keydown' => 'form.errors.clear($event.target.name)',
+            'files' => true,
+            'role' => 'form',
+            'class' => 'form-loading-button',
+            'novalidate' => true,
+            'route' => '',
+            'url' => '',
+        ];
+
+        if (! empty($route)) {
+            $form_params['route'] = $route;
+        } else {
+            $form_params['url'] = $path . '/import';
+        }
+
+        return $form_params;
+    }
+
+    protected function getImportDocumentLink($group, $type)
+    {
+        $document_link = config('import.' . $group . '.' . $type . '.document_link');
+
+        if (! empty($document_link)) {
+            return $document_link;
+        }
+
+        $document_link = 'https://akaunting.com/hc/docs/import-export/';
+
+        return $document_link;
+    }
+
+    protected function getImportViewPath($group, $type)
+    {
+        $view = config('import.' . $group . '.' . $type . '.view');
+
+        if (! empty($view)) {
+            return $view;
+        }
+
+        $view = 'common.import.create';
+
+        return $view;
     }
 }

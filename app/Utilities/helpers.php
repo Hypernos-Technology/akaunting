@@ -113,6 +113,26 @@ if (! function_exists('company_id')) {
     }
 }
 
+if (! function_exists('team')) {
+    /**
+     * Get team of current company.
+     */
+    function team()
+    {
+        return company()?->team() !== null ? company()?->team() : company()?->owner?->team();
+    }
+}
+
+if (! function_exists('team_id')) {
+    /**
+     * Get id of current company team.
+     */
+    function team_id()
+    {
+        return team()?->id;
+    }
+}
+
 if (! function_exists('should_queue')) {
     /**
      * Check if queue is enabled.
@@ -162,6 +182,16 @@ if (! function_exists('array_values_recursive')) {
         }
 
         return $flat;
+    }
+}
+
+if (! function_exists('running_in_install')) {
+    /**
+     * Detect if application is running in queue.
+     */
+    function running_in_install(): bool
+    {
+        return request_is_install() && env('APP_INSTALLED', false) == false;
     }
 }
 
@@ -322,6 +352,13 @@ if (! function_exists('role_model_class')) {
     }
 }
 
+if (! function_exists('team_model_class')) {
+    function team_model_class(): string
+    {
+        return config('laratrust.models.team');
+    }
+}
+
 if (! function_exists('search_string_value')) {
     function search_string_value(string $name, string $default = '', string $input = ''): string|array
     {
@@ -337,6 +374,15 @@ if (! function_exists('is_cloud')) {
         $cloud = new class() { use Cloud; };
 
         return $cloud->isCloud();
+    }
+}
+
+if (! function_exists('request_is_install')) {
+    function request_is_install(Request|null $request = null): bool
+    {
+        $r = $request ?: request();
+
+        return $r->is('install/*');
     }
 }
 
@@ -359,8 +405,12 @@ if (! function_exists('request_is_auth')) {
 }
 
 if (! function_exists('request_is_signed')) {
-    function request_is_signed(Request|null $request = null, int $company_id): bool
+    function request_is_signed(Request|null $request = null, int $company_id = null): bool
     {
+        if (is_null($company_id)) {
+            return false;
+        }
+
         $r = $request ?: request();
 
         return $r->is($company_id . '/signed/*');
@@ -368,8 +418,12 @@ if (! function_exists('request_is_signed')) {
 }
 
 if (! function_exists('request_is_portal')) {
-    function request_is_portal(Request|null $request = null, int $company_id): bool
+    function request_is_portal(Request|null $request = null, int $company_id = null): bool
     {
+        if (is_null($company_id)) {
+            return false;
+        }
+
         $r = $request ?: request();
 
         return $r->is($company_id . '/portal') || $r->is($company_id . '/portal/*');

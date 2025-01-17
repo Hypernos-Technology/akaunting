@@ -40,7 +40,7 @@ class Account extends Form
             $this->selected = $account_id;
 
             if (! $this->accounts->has($account_id)) {
-                $account = Model::find($account_id);
+                $account = Model::with('transactions')->find($account_id);
 
                 $this->accounts->push($account);
             }
@@ -60,15 +60,18 @@ class Account extends Form
             $this->selected = setting('default.account');
         }
 
+        // Share accounts with all views
+        view()->share('accounts', $this->accounts);
+
         return view('components.form.group.account');
     }
 
     protected function getAccounts()
     {
         if ($this->hideCurrency) {
-            return Model::enabled()->orderBy('name')->get();
+            return Model::with('transactions')->enabled()->orderBy('name')->get();
         }
 
-        return Model::enabled()->orderBy('name')->get();
+        return Model::with('transactions')->enabled()->orderBy('name')->get();
     }
 }

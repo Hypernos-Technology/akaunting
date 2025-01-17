@@ -5,6 +5,7 @@ namespace App\Models\Setting;
 use App\Abstracts\Model;
 use App\Builders\Category as Builder;
 use App\Models\Document\Document;
+use App\Interfaces\Export\WithParentSheet;
 use App\Relations\HasMany\Category as HasMany;
 use App\Scopes\Category as Scope;
 use App\Traits\Categories;
@@ -25,7 +26,7 @@ class Category extends Model
 
     protected $table = 'categories';
 
-    protected $appends = ['display_name'];
+    protected $appends = ['display_name', 'color_hex_code'];
 
     /**
      * Attributes that should be mass-assignable.
@@ -240,7 +241,9 @@ class Category extends Model
         $limit = (int) $request->get('limit', setting('default.list_limit', '25'));
         $offset = $page ? ($page - 1) * $limit : 0;
 
-        $query->offset($offset)->limit($limit);
+        if (! $this instanceof WithParentSheet && count((array) $ids) < $limit) {
+            $query->offset($offset)->limit($limit);
+        }
 
         return $query->cursor();
     }
@@ -250,7 +253,9 @@ class Category extends Model
      */
     public function getColorHexCodeAttribute(): string
     {
-        return $this->getHexCodeOfTailwindClass($this->color);
+        $color = $this->color ?? 'green-500';
+
+        return $this->getHexCodeOfTailwindClass($color);
     }
 
     /**

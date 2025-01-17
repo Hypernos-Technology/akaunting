@@ -44,6 +44,7 @@ return [
     'dimensions' => 'The :attribute has invalid image dimensions.',
     'distinct' => 'The :attribute field has a duplicate value.',
     'doesnt_start_with' => 'The :attribute may not start with one of the following: :values.',
+    'double' => 'The :attribute must be a valid double.',
     'email' => 'The :attribute must be a valid email address.',
     'ends_with' => 'The :attribute must end with one of the following: :values.',
     'enum' => 'The selected :attribute is invalid.',
@@ -157,6 +158,7 @@ return [
         'invalid_extension'     => 'The file extension is invalid.',
         'invalid_dimension'     => 'The :attribute dimensions must be max :width x :height px.',
         'invalid_colour'        => 'The :attribute colour is invalid.',
+        'invalid_payment_method'=> 'The payment method is invalid.',
     ],
 
     /*
